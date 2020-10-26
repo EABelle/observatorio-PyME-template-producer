@@ -68,6 +68,17 @@ function convert(externalTemplate) {
   };
 }
 
+function publishNewTemplates(templatesResponse, templates, existingTemplateIds) {
+  const newTemplates = templatesResponse.filter(t => !templates.includes(t) && !existingTemplateIds.includes(t.id));
+  logger.info({ newTemplates }, '> New templates: ');
+
+  newTemplates.forEach(template => {
+    const formattedTemplate = convert(template);
+    templates[template.id] = formattedTemplate;
+    publish(formattedTemplate);
+  });
+}
+
 /**
  *
  * @param {array} templates
@@ -77,26 +88,22 @@ function convert(externalTemplate) {
  * @returns {number} The setInterval id
  *
  */
-function getTemplates(templates, existingTemplateIds = [], interval = 1000  *  60, previousInterval) {
+async function getTemplates(templates, existingTemplateIds = [], interval = 1000  *  60, previousInterval) {
 
   if (previousInterval) {
     clearInterval(previousInterval);
   }
 
   logger.info('> Get Templates');
+  const templatesResponse = await getExternalTemplates();
+  console.log(templatesResponse);
+  publishNewTemplates(templatesResponse, templates, existingTemplateIds)
 
   return setInterval(async () => {
 
     const templatesResponse = await getExternalTemplates();
-    console.log(templatesResponse)
-    const newTemplates = templatesResponse.filter(t => !templates.includes(t) && !existingTemplateIds.includes(t.id));
-    logger.info({ newTemplates }, '> New templates: ');
-
-    newTemplates.forEach(template => {
-      const formattedTemplate = convert(template);
-      templates[template.id] = formattedTemplate;
-      publish(formattedTemplate);
-    });
+    console.log(templatesResponse);
+    publishNewTemplates(templatesResponse, templates, existingTemplateIds)
 
   }, interval);
 }
