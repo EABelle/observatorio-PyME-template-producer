@@ -131,7 +131,7 @@ async function main() {
   logger.info('> Templates initialization...');
   const {templates, existingTemplateIds} = await init();
 
-  const intervalTime = 1000  *  60;
+  const intervalTime = 1000 * 60 * 60 * 6;
   let requestInterval;
   while(true) {
     logger.info(intervalTime, 'Templates request at rate');
