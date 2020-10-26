@@ -1,5 +1,5 @@
 'use strict';
-
+require('dotenv').config();
 const amqplib = require('amqplib');
 const logger = require('chpr-logger');
 const Axios = require('axios');
