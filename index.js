@@ -3,13 +3,14 @@
 const amqplib = require('amqplib');
 const logger = require('chpr-logger');
 const Axios = require('axios');
+const config = require('./config');
 
 const AMQP_URL = process.env.AMQP_URL || 'amqp://guest:guest@localhost:5672';
 const EXCHANGE = 'templates';
 const ROUTING_KEY = 'templates.update';
 
-const externalTemplatesURL = 'http://localhost:8080/templates';
-const existingTemplateIdsURL = 'http://localhost:8080/templates/external-ids';
+const externalTemplatesURL = config.get().EXTERNAL_TEMPLATES_URL;
+const existingTemplateIdsURL = config.get().EXISTING_TEMPLATE_IDS_URL;
 
 const axios = Axios.create();
 
@@ -60,7 +61,6 @@ function convert(externalTemplate) {
  * @param {number} [interval=6000 ms]
  * @param {number} previousInterval
  * @returns {number} The setInterval id
-
  *
  */
 function getTemplates(templates, existingTemplateIds = [], interval = 1000  *  60, previousInterval) {
@@ -97,7 +97,7 @@ async function init() {
   logger.info('> RabbitMQ initialization');
   client = await amqplib.connect(AMQP_URL);
   client.channel = await client.createChannel();
-  await client.channel.assertExchange(EXCHANGE, 'topic', {
+  await client.channel.assertExchange(EXCHANGE, 'fanout', {
     durable: false
   });
 
