@@ -4,7 +4,8 @@
   "description": "RabbitMQ messages producer",
   "main": "index.js",
   "scripts": {
-    "start": "node . | bunyan"
+    "start": "node . | bunyan",
+    "prod": "NODE_ENV=production node . | bunyan"
   },
   "dependencies": {
     "amqplib": "0.5.1",

@@ -1,0 +1,136 @@
+{
+  "name":"Cuestionario sobre la empresa",
+  "description":"Este es un cuestinonario sobre la empresa",
+  "sections":[
+    {
+      "title":"Datos de Identificación de la Empresa",
+      "description":"Ingresá todos los datos",
+      "questions":[
+        {
+          "type":"TEXT",
+          "title":"Nombre o razón social de la empresa",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"CUIT",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"Domicilio",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"CP",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"Localidad",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"Partido / departamento",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"Provincia",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"Teléfono",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"email",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"Sitio web",
+          "mandatory":true
+        }
+      ]
+    },
+    {
+      "title":"Sección A: Características generales de la emppresa",
+      "questions":[
+        {
+          "type":"SELECT",
+          "title":"Actividad principal",
+          "options":[
+            "Comercialización al exterior",
+            "Fábrica",
+            "Construcción"
+          ],
+          "description":"(*) Si la empresa factura por horas o distancia recorrida",
+          "mandatory":true
+        },
+        {
+          "type":"CHOICE",
+          "title":"Realizó inversiones durante 2019?",
+          "options":[
+            "Sí",
+            "No"
+          ],
+          "mandatory":true
+        },
+        {
+          "type":"FILE",
+          "title":"Archivo 1",
+          "mandatory":true
+        },
+        {
+          "type":"TEXT",
+          "title":"¿En qué invirtió?",
+          "multiline":true
+        },
+        {
+          "type":"GROUPED",
+          "title":"¿En qué invirtió?",
+          "questions":[
+            {
+              "type":"TEXT",
+              "title":"Reinversión de utilidades",
+              "adornment":"%"
+            },
+            {
+              "type":"TEXT",
+              "title":"Aportes",
+              "adornment":"%"
+            },
+            {
+              "type":"TEXT",
+              "title":"Programas públicos",
+              "adornment":"%"
+            },
+            {
+              "type":"TEXT",
+              "title":"Otros",
+              "adornment":"%"
+            },
+            {
+              "type":"TEXT",
+              "title":"Especificar \"Otros\""
+            }
+          ]
+        },
+        {
+          "type":"NUMBER",
+          "title":"¿En qué año invirtió?",
+          "description":"Min: 1980 / Max: 2020",
+          "restrictions":{
+            "min":1980,
+            "max":2020
+          }
+        }
+      ]
+    }
+  ]
+}

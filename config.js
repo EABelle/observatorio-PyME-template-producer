@@ -1,8 +1,11 @@
 const env = process.env.NODE_ENV;
 
+const isProd = () => ['production', 'prod', 'p'].includes(env);
+
 const config = {
+    isProd,
     get: () => {
-        if(env !== 'production' || env !== 'prod' || env !== 'p') {
+        if(isProd()) {
             return {
                 EXTERNAL_TEMPLATES_URL: 'http://localhost:8080/templates',
                 EXISTING_TEMPLATE_IDS_URL: 'http://localhost:8080/templates/external-ids',

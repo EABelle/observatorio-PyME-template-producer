@@ -4,6 +4,7 @@ const amqplib = require('amqplib');
 const logger = require('chpr-logger');
 const Axios = require('axios');
 const config = require('./config');
+const templateMock = require('./template-mock.json');
 
 const AMQP_URL = process.env.AMQP_URL || 'amqp://guest:guest@localhost:5672';
 const EXCHANGE = 'templates';
@@ -12,9 +13,18 @@ const ROUTING_KEY = 'templates.update';
 const externalTemplatesURL = config.get().EXTERNAL_TEMPLATES_URL;
 const existingTemplateIdsURL = config.get().EXISTING_TEMPLATE_IDS_URL;
 
+const generateTemplateMock = () => [{
+  ...templateMock,
+  id: Math.random().toString(10),
+  created: (new Date()).toISOString(),
+}];
+
 const axios = Axios.create();
 
 async function getExternalTemplates(params = {}) {
+  if (!config.isProd()) {
+    return generateTemplateMock();
+  }
   try {
     const response = await axios.get(externalTemplatesURL, {
       params,
@@ -27,6 +37,10 @@ async function getExternalTemplates(params = {}) {
 }
 
 async function getExistingTemplateIds(params = {}) {
+  if (!config.isProd()) {
+    return [];
+  }
+
   const response = await axios.get(existingTemplateIdsURL, {
     params,
   });
@@ -74,6 +88,7 @@ function getTemplates(templates, existingTemplateIds = [], interval = 1000  *  6
   return setInterval(async () => {
 
     const templatesResponse = await getExternalTemplates();
+    console.log(templatesResponse)
     const newTemplates = templatesResponse.filter(t => !templates.includes(t) && !existingTemplateIds.includes(t.id));
     logger.info({ newTemplates }, '> New templates: ');
 
