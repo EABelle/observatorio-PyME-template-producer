@@ -1,9 +1,6 @@
 {
   "name":"Cuestionario sobre la empresa",
   "description":"Este es un cuestinonario sobre la empresa",
-  "company": {
-    "name": "Empresa de prueba SRL"
-  },
   "sections":[
     {
       "title":"Datos de Identificación de la Empresa",
