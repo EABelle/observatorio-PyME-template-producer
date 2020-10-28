@@ -12,6 +12,7 @@
     "axios": "^0.21.0",
     "bunyan": "1.8.10",
     "chpr-logger": "3.2.0",
-    "dotenv": "^8.2.0"
+    "dotenv": "^8.2.0",
+    "newrelic": "^6.14.0"
   }
 }
