@@ -16,6 +16,19 @@ const existingTemplateIdsURL = config.get().EXISTING_TEMPLATE_IDS_URL;
 
 const ONE_HOUR = 1000 * 60 * 60;
 
+function formatDate(date) {
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+  const yyyy = date.getFullYear();
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+let lastDayFetched = new Date();
+let time = lastDayFetched.getTime();
+time -= 86400000;
+lastDayFetched = new Date(time)
+lastDayFetched = formatDate(lastDayFetched);
+
 const generateTemplateMock = () => [{
   ...templateMock,
   id: Math.random().toString(10),
@@ -83,14 +96,14 @@ function publishNewTemplates(templatesResponse, templates, existingTemplateIds) 
   });
 }
 
-function getTodayTemplates() {
+async function getTodayTemplates() {
   const date = new Date();
-  const dd = String(date.getDate()).padStart(2, '0');
-  const mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
-  const yyyy = date.getFullYear();
-  const today = `${yyyy}-${mm}-${dd}`;
-  logger.info({ today }, '> Date: ');
-  return getExternalTemplates({ date: today });
+  const today = formatDate(date);
+  const params = { dateFrom: lastDayFetched, dateTo: today };
+  logger.info({ params }, '> Dates: ');
+  const templates = await getExternalTemplates(params);
+  lastDayFetched = today;
+  return templates;
 }
 
 /**
@@ -135,8 +148,10 @@ async function init() {
     durable: false
   });
 
+  const date = new Date();
+  const today = formatDate(date);
   const templates = [];
-  const existingTemplateIds = await getExistingTemplateIds();
+  const existingTemplateIds = await getExistingTemplateIds({ dateFrom: lastDayFetched, dateTo: today });
   logger.info('> Templates initialized');
 
   return {templates, existingTemplateIds};
