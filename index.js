@@ -14,6 +14,8 @@ const ROUTING_KEY = 'templates.update';
 const externalTemplatesURL = config.get().EXTERNAL_TEMPLATES_URL;
 const existingTemplateIdsURL = config.get().EXISTING_TEMPLATE_IDS_URL;
 
+const ONE_HOUR = 1000 * 60 * 60;
+
 const generateTemplateMock = () => [{
   ...templateMock,
   id: Math.random().toString(10),
@@ -22,6 +24,7 @@ const generateTemplateMock = () => [{
 
 const axios = Axios.create();
 
+// TODO: Add the day filter on the backend api endpoint
 async function getExternalTemplates(params = {}) {
   if (!config.isProd()) {
     return generateTemplateMock();
@@ -80,6 +83,16 @@ function publishNewTemplates(templatesResponse, templates, existingTemplateIds) 
   });
 }
 
+function getTodayTemplates() {
+  const date = new Date();
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+  const yyyy = date.getFullYear();
+  const today = `${yyyy}-${mm}-${dd}`;
+  logger.info({ today }, '> Date: ');
+  return getExternalTemplates({ date: today });
+}
+
 /**
  *
  * @param {array} templates
@@ -96,14 +109,12 @@ async function getTemplates(templates, existingTemplateIds = [], interval = 1000
   }
 
   logger.info('> Get Templates');
-  const templatesResponse = await getExternalTemplates();
-  console.log(templatesResponse);
+  const templatesResponse = await getTodayTemplates({});
   publishNewTemplates(templatesResponse, templates, existingTemplateIds)
 
   return setInterval(async () => {
 
-    const templatesResponse = await getExternalTemplates();
-    console.log(templatesResponse);
+    const templatesResponse = await getTodayTemplates();
     publishNewTemplates(templatesResponse, templates, existingTemplateIds)
 
   }, interval);
@@ -137,14 +148,25 @@ async function init() {
  */
 async function main() {
   logger.info('> Templates initialization...');
-  const {templates, existingTemplateIds} = await init();
+  const cleanInterval = ONE_HOUR * 24;
+  let cleanFlag = false;
+  setInterval(() => {
+    cleanFlag = true
+  }, cleanInterval);
+  let {templates, existingTemplateIds} = await init();
 
-  const intervalTime = 1000 * 60 * 60 * 6;
+  const intervalTime = ONE_HOUR * 6;
   let requestInterval;
   while(true) {
     logger.info(intervalTime, 'Templates request at rate');
     requestInterval = await getTemplates(templates, existingTemplateIds, intervalTime, requestInterval);
     await new Promise(resolve => setTimeout(resolve, intervalTime));
+    if (cleanFlag) {
+      const cleanCache = await init();
+      templates = cleanCache.templates;
+      existingTemplateIds = cleanCache.existingTemplateIds;
+      cleanFlag = false;
+    }
   }
 }
 
