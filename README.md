@@ -34,9 +34,8 @@ npm start
 
 The following environments variables are available to configure the `producer` worker.
 
-- `N`[=10] - Total number of drivers.
-- `GROWTH`[=1000] - Growth interval (ms)
-- `UNTRUSTWORTHY_DRIVERS_RATIO`[=0.05] - ratio of drivers that will not sent all their position messages
+- `NODE_ENV` - Node environment
+- `AMQP_URL` - RabbitMQ url
 
 ## Docker Cleanup
 
