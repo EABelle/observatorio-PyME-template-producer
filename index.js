@@ -5,16 +5,19 @@ const amqplib = require('amqplib');
 const logger = require('chpr-logger');
 const Axios = require('axios');
 const config = require('./config');
-const templateMock = require('./template-mock.json');
 
 const AMQP_URL = process.env.AMQP_URL || 'amqp://guest:guest@localhost:5672';
 const EXCHANGE = 'templates';
 const ROUTING_KEY = 'templates.update';
 
 const externalTemplatesURL = config.get().EXTERNAL_TEMPLATES_URL;
+const externalLoginURL = config.get().EXTERNAL_LOGIN_URL;
+const externalLoginUser = config.get().EXTERNAL_LOGIN_USER;
+const externalLoginPass = config.get().EXTERNAL_LOGIN_PASS;
 const existingTemplateIdsURL = config.get().EXISTING_TEMPLATE_IDS_URL;
 
-const ONE_HOUR = 1000 * 60 * 60;
+const ONE_MINUTE = 1000 * 60;
+const ONE_HOUR = ONE_MINUTE * 60;
 
 function formatDate(date) {
   const dd = String(date.getDate()).padStart(2, '0');
@@ -23,33 +26,47 @@ function formatDate(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+let token;
+
 let lastDayFetched = new Date();
 let time = lastDayFetched.getTime();
 time -= 86400000;
 lastDayFetched = new Date(time)
 lastDayFetched = formatDate(lastDayFetched);
 
-const generateTemplateMock = () => [{
-  ...templateMock,
-  id: Math.random().toString(10),
-  created: (new Date()).toISOString(),
-}];
-
 const axios = Axios.create();
 
 // TODO: Add the day filter on the backend api endpoint
 async function getExternalTemplates(params = {}) {
-  if (!config.isProd()) {
-    return generateTemplateMock();
-  }
   try {
-    const response = await axios.get(externalTemplatesURL, {
-      params,
-    });
+    const response = await axios.get(
+        externalTemplatesURL,
+        {
+          headers: { Authorization: 'Bearer ' + token },
+          params,
+        },
+        );
     return response.data;
   } catch (e) {
-    logger.error(e);
-    return [];
+    try {
+      const loginResponse = await axios.post(externalLoginURL, {
+        username: externalLoginUser,
+        password: externalLoginPass
+      });
+      token = loginResponse.data.loginUser.token;
+      console.debug('TOKEN', token)
+      const response = await axios.get(
+          externalTemplatesURL,
+          {
+            headers: { Authorization: 'Bearer ' + token },
+            params,
+          }
+      );
+      return response.data;
+    } catch (retryError) {
+      logger.error(e);
+      return [];
+    }
   }
 }
 
@@ -61,6 +78,7 @@ async function getExistingTemplateIds(params = {}) {
   const response = await axios.get(existingTemplateIdsURL, {
     params,
   });
+  console.debug('EXISTING TEMPLATE IDS', response.data);
   return response.data;
 }
 
@@ -77,23 +95,36 @@ function publish(state) {
   });
 }
 
-function convert(externalTemplate) {
-  const { id: externalId, ...templateDetails } = externalTemplate;
-  return {
-    ...templateDetails,
-    externalId,
-  };
-}
-
 function publishNewTemplates(templatesResponse, templates, existingTemplateIds) {
   const newTemplates = templatesResponse.filter(t => !templates.includes(t) && !existingTemplateIds.includes(t.id));
   logger.info({ newTemplates }, '> New templates: ');
 
   newTemplates.forEach(template => {
-    const formattedTemplate = convert(template);
+    const formattedTemplate = transform(template);
     templates[template.id] = formattedTemplate;
     publish(formattedTemplate);
   });
+}
+
+function transform(template) {
+  return {
+    externalId: template._id,
+    modified: template.modified,
+    created: template.created,
+    name: template.poll_title,
+    description: template.description,
+    sections: [{
+      title: '',
+      description: '',
+      questions: template.questions && template.questions.values.map(question => ({
+        type: question.q_type === 'check' ? 'CHOICE'
+            : 'TEXT',
+        value: question.value,
+        mandatory: question.mandatory,
+        options: question.options,
+      }))
+    }]
+  };
 }
 
 async function getTodayTemplates() {
@@ -123,12 +154,14 @@ async function getTemplates(templates, existingTemplateIds = [], interval = 1000
 
   logger.info('> Get Templates');
   const templatesResponse = await getTodayTemplates({});
+  console.debug('Get Templates OK');
   publishNewTemplates(templatesResponse, templates, existingTemplateIds)
 
   return setInterval(async () => {
 
     const templatesResponse = await getTodayTemplates();
     publishNewTemplates(templatesResponse, templates, existingTemplateIds)
+    console.debug('Get Templates OK');
 
   }, interval);
 }
@@ -170,7 +203,7 @@ async function main() {
   }, cleanInterval);
   let {templates, existingTemplateIds} = await init();
 
-  const intervalTime = ONE_HOUR * 6;
+  const intervalTime = ONE_MINUTE * 5;
   let requestInterval;
   while(true) {
     logger.info(intervalTime, 'Templates request at rate');
