@@ -13,9 +13,9 @@ docker create --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 docker start rabbitmq
 
 # Producer
-docker build --tag 'producer:latest' .
-docker create --name producer --link rabbitmq producer:latest
-docker start producer
+docker build --tag 'templates-producer:latest' .
+docker create --name templates-producer --link rabbitmq templates-producer:latest
+docker start templates-producer
 ```
 
 > RabbitMQ admin: [http://localhost:15672](http://localhost:15672) - login: `guest` - password: `guest`
